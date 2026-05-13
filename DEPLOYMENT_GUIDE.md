@@ -5,6 +5,56 @@
 - SSH/Terminal access or cPanel File Manager
 - Node.js 18+ installed on the server
 
+## ⚠️ CRITICAL: Environment Variables
+
+Your `.env.local` file is NOT included in git (it's in `.gitignore` for security). You MUST set environment variables in your deployment platform.
+
+### Required Environment Variables:
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### Where to Set Environment Variables:
+
+**1. GitHub Actions (if using CI/CD):**
+- Go to your GitHub repository
+- Settings → Secrets and variables → Actions
+- Add secrets:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+**2. Vercel:**
+- Project Settings → Environment Variables
+- Add both variables
+
+**3. cPanel Node.js App:**
+- In cPanel → Setup Node.js App
+- Click on your app
+- Add environment variables in the interface
+
+**4. Manual Deployment (SSH):**
+Create `.env.local` file on server:
+```bash
+cd /home/username/public_html
+nano .env.local
+```
+
+Add:
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+Save and restart the app.
+
+**5. Using export in SSH:**
+```bash
+export NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+export NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
+npm run build
+```
+
 ## ⚠️ Important Limitations
 Next.js requires a **persistent Node.js server**. Most shared cPanel hosting:
 - Has resource limits (RAM, CPU)
