@@ -1,6 +1,6 @@
 ---
 title: Chart of Accounts - Groups & Ledgers
-status: todo
+status: in_progress
 priority: high
 type: feature
 tags: [accounting, masters]

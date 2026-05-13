@@ -15,7 +15,6 @@ import {
   TrendingUp,
   Settings,
   LogOut,
-  ChevronDown,
   Building2
 } from "lucide-react";
 
@@ -35,6 +34,9 @@ export function GatewayMenu({ companyId, yearId, onChangeCompany }: GatewayMenuP
 
   useEffect(() => {
     loadCompanyData();
+    // Store in sessionStorage for child pages
+    sessionStorage.setItem("selectedCompanyId", companyId);
+    sessionStorage.setItem("selectedYearId", yearId);
   }, [companyId, yearId]);
 
   async function loadCompanyData() {
@@ -57,9 +59,8 @@ export function GatewayMenu({ companyId, yearId, onChangeCompany }: GatewayMenuP
     { key: "F7", action: () => console.log("Journal voucher") },
     { key: "F8", action: () => console.log("Sales voucher") },
     { key: "F9", action: () => console.log("Purchase voucher") },
-    { key: "L", alt: true, action: () => console.log("Create Ledger") },
-    { key: "G", alt: true, action: () => console.log("Create Group") },
-    { key: "V", alt: true, action: () => console.log("Voucher Entry") },
+    { key: "L", alt: true, action: () => router.push("/accounts/chart") },
+    { key: "G", alt: true, action: () => router.push("/accounts/chart") },
   ]);
 
   async function handleLogout() {
@@ -114,7 +115,11 @@ export function GatewayMenu({ companyId, yearId, onChangeCompany }: GatewayMenuP
                 Accounts
               </h3>
               <div className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start gap-2 h-auto py-3"
+                  onClick={() => router.push("/accounts/chart")}
+                >
                   <BookOpen className="h-4 w-4" />
                   <div className="text-left flex-1">
                     <div className="font-medium">Chart of Accounts</div>
