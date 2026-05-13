@@ -53,12 +53,12 @@ export function GatewayMenu({ companyId, yearId, onChangeCompany }: GatewayMenuP
   }
 
   useKeyboardShortcuts([
-    { key: "F4", action: () => console.log("Payment voucher") },
-    { key: "F5", action: () => console.log("Receipt voucher") },
-    { key: "F6", action: () => console.log("Contra voucher") },
-    { key: "F7", action: () => console.log("Journal voucher") },
-    { key: "F8", action: () => console.log("Sales voucher") },
-    { key: "F9", action: () => console.log("Purchase voucher") },
+    { key: "F4", action: () => router.push("/vouchers/payment") },
+    { key: "F5", action: () => router.push("/vouchers/receipt") },
+    { key: "F6", action: () => router.push("/vouchers/contra") },
+    { key: "F7", action: () => router.push("/vouchers/journal") },
+    { key: "F8", action: () => router.push("/vouchers/sales") },
+    { key: "F9", action: () => router.push("/vouchers/purchase") },
     { key: "L", alt: true, action: () => router.push("/accounts/chart") },
     { key: "G", alt: true, action: () => router.push("/accounts/chart") },
   ]);
@@ -209,7 +209,11 @@ export function GatewayMenu({ companyId, yearId, onChangeCompany }: GatewayMenuP
                 Quick Voucher Entry
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <Button variant="outline" className="h-auto py-4">
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-4"
+                  onClick={() => router.push("/vouchers/payment")}
+                >
                   <div className="text-center">
                     <div className="font-bold text-accent">F4</div>
                     <div className="text-sm">Payment</div>

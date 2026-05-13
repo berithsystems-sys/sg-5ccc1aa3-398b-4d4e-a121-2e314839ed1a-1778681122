@@ -1,6 +1,6 @@
 ---
 title: Voucher Entry System - Core Types
-status: todo
+status: in_progress
 priority: high
 type: feature
 tags: [vouchers, accounting, data-entry]
