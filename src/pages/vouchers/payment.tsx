@@ -134,8 +134,8 @@ export default function PaymentVoucher() {
         narration,
       }, lines.map(l => ({
         ledger_id: l.ledgerId,
-        amount: l.amount,
-        type: l.type,
+        debit_amount: l.type === "Dr" ? l.amount : 0,
+        credit_amount: l.type === "Cr" ? l.amount : 0,
       })));
 
       alert("Payment voucher saved successfully!");
