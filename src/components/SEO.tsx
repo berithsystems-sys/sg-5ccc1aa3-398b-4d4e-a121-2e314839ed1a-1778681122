@@ -1,67 +1,65 @@
-import Head from 'next/head';
+import Head from "next/head";
 
-interface SEOProps {
+export interface SEOProps {
   title?: string;
   description?: string;
   image?: string;
   url?: string;
 }
 
-// SEO elements that can be used in _document.tsx (returns JSX without Head wrapper)
+// Default SEO values
+const defaultTitle = "EBC HQ Accounting - Complete Church Management System";
+const defaultDescription = "Comprehensive accounting and financial management system for Emmanuel Baptist Church headquarters and all branch churches. Multi-church support, consolidated reporting, GST compliance, and complete statutory reporting.";
+const defaultImage = "/og-image.png";
+
 export function SEOElements({
-  title = "Hello World",
-  description = "Welcome to my app",
-  image = "/og-image.png",
+  title = defaultTitle,
+  description = defaultDescription,
+  image = defaultImage,
   url,
 }: SEOProps) {
+  const fullTitle = title === defaultTitle ? title : `${title} | EBC HQ Accounting`;
+
   return (
     <>
-      <title>{title}</title>
+      <title>{fullTitle}</title>
       <meta name="description" content={description} />
-      <link rel="icon" href="/favicon.ico" />
-
-      {/* Open Graph */}
-      <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
-      {image && <meta property="og:image" content={image} />}
-      {url && <meta property="og:url" content={url} />}
       <meta property="og:type" content="website" />
-
-      {/* Twitter */}
+      <meta property="og:title" content={fullTitle} />
+      <meta property="og:description" content={description} />
+      <meta property="og:image" content={image} />
+      {url && <meta property="og:url" content={url} />}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={title} />
+      <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      {image && <meta name="twitter:image" content={image} />}
+      <meta name="twitter:image" content={image} />
+      <link rel="icon" href="/favicon.ico" />
     </>
   );
 }
 
-// SEO component for use in pages/_app.tsx or individual pages (uses next/head)
-// Note: Flattened structure (no fragment) for better Next.js Head compatibility during hot reload
 export function SEO({
-  title = "Hello World",
-  description = "Welcome to my app",
-  image = "/og-image.png",
+  title = defaultTitle,
+  description = defaultDescription,
+  image = defaultImage,
   url,
 }: SEOProps) {
+  const fullTitle = title === defaultTitle ? title : `${title} | EBC HQ Accounting`;
+
   return (
     <Head>
-      <title>{title}</title>
+      <title>{fullTitle}</title>
       <meta name="description" content={description} />
-      <link rel="icon" href="/favicon.ico" />
-
-      {/* Open Graph */}
-      <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
-      {image && <meta property="og:image" content={image} />}
-      {url && <meta property="og:url" content={url} />}
       <meta property="og:type" content="website" />
-
-      {/* Twitter */}
+      <meta property="og:title" content={fullTitle} />
+      <meta property="og:description" content={description} />
+      <meta property="og:image" content={image} />
+      {url && <meta property="og:url" content={url} />}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={title} />
+      <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      {image && <meta name="twitter:image" content={image} />}
+      <meta name="twitter:image" content={image} />
+      <link rel="icon" href="/favicon.ico" />
     </Head>
   );
 }

@@ -1,31 +1,40 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "@/integrations/supabase/client";
-import { GatewayMenu } from "@/components/GatewayMenu";
 import { SEO } from "@/components/SEO";
+import { GatewayMenu } from "@/components/GatewayMenu";
 
 export default function Home() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkUser();
   }, []);
 
-  async function checkUser() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+  const checkUser = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        router.push("/auth/login");
+        return;
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error("Error checking auth:", error);
       router.push("/auth/login");
-    } else {
-      setIsLoading(false);
     }
-  }
+  };
 
-  if (isLoading) return null;
+  if (loading) {
+    return null;
+  }
 
   return (
     <>
-      <SEO title="Tally Prime Clone" />
+      <SEO title="EBC HQ Accounting" />
       <GatewayMenu />
     </>
   );
