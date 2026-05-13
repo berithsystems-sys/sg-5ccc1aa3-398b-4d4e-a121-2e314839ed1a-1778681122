@@ -93,7 +93,7 @@ export const voucherService = {
     return voucherData;
   },
 
-  async getNextVoucherNumber(companyId: string, voucherType: string) {
+  async getNextVoucherNumber(companyId: string, voucherType: Voucher["voucher_type"]) {
     const { data, error } = await supabase
       .from("vouchers")
       .select("voucher_number")
