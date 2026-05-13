@@ -22,15 +22,15 @@ interface VoucherLine {
   type: "Dr" | "Cr";
 }
 
-export default function PaymentVoucher() {
+export default function ReceiptVoucher() {
   const router = useRouter();
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [voucherNumber, setVoucherNumber] = useState("");
   const [voucherDate, setVoucherDate] = useState(new Date().toISOString().split("T")[0]);
   const [narration, setNarration] = useState("");
   const [lines, setLines] = useState<VoucherLine[]>([
-    { id: "1", ledgerId: "", ledgerName: "", amount: 0, type: "Dr" },
-    { id: "2", ledgerId: "", ledgerName: "", amount: 0, type: "Cr" },
+    { id: "1", ledgerId: "", ledgerName: "", amount: 0, type: "Cr" },
+    { id: "2", ledgerId: "", ledgerName: "", amount: 0, type: "Dr" },
   ]);
   const [saving, setSaving] = useState(false);
 
@@ -54,7 +54,7 @@ export default function PaymentVoucher() {
 
       const [ledgersData, nextNumber] = await Promise.all([
         ledgerService.getLedgers(companyId),
-        voucherService.getNextVoucherNumber(companyId, "Payment")
+        voucherService.getNextVoucherNumber(companyId, "Receipt")
       ]);
 
       setLedgers(ledgersData);
@@ -71,7 +71,7 @@ export default function PaymentVoucher() {
       ledgerId: "", 
       ledgerName: "", 
       amount: 0, 
-      type: "Dr" 
+      type: "Cr" 
     }]);
   }
 
@@ -120,7 +120,7 @@ export default function PaymentVoucher() {
 
       await voucherService.createVoucher({
         company_id: companyId,
-        voucher_type: "Payment",
+        voucher_type: "Receipt",
         voucher_number: voucherNumber,
         voucher_date: voucherDate,
         total_amount: totals.debit,
@@ -131,7 +131,7 @@ export default function PaymentVoucher() {
         type: l.type,
       })));
 
-      alert("Payment voucher saved successfully!");
+      alert("Receipt voucher saved successfully!");
       router.push("/");
     } catch (err) {
       console.error("Error saving voucher:", err);
@@ -146,10 +146,9 @@ export default function PaymentVoucher() {
 
   return (
     <>
-      <SEO title="Payment Voucher - Tally Prime" />
+      <SEO title="Receipt Voucher - Tally Prime" />
       
       <div className="min-h-screen bg-background">
-        {/* Header */}
         <div className="tally-header px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button 
@@ -161,7 +160,7 @@ export default function PaymentVoucher() {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Gateway
             </Button>
-            <h1 className="text-lg font-bold">Payment Voucher</h1>
+            <h1 className="text-lg font-bold">Receipt Voucher</h1>
           </div>
           <div className="flex gap-2">
             <Button 
@@ -176,11 +175,9 @@ export default function PaymentVoucher() {
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="container py-8">
           <div className="max-w-5xl mx-auto">
             <Card className="p-6">
-              {/* Voucher Header */}
               <div className="grid grid-cols-3 gap-4 mb-6 pb-6 border-b">
                 <div>
                   <Label htmlFor="voucherNumber">Voucher No.</Label>
@@ -204,13 +201,12 @@ export default function PaymentVoucher() {
                 
                 <div>
                   <Label>Type</Label>
-                  <div className="h-10 px-3 py-2 bg-muted rounded-sm font-semibold">
-                    Payment
+                  <div className="h-10 px-3 py-2 bg-muted rounded-sm font-semibold text-accent">
+                    Receipt
                   </div>
                 </div>
               </div>
 
-              {/* Voucher Lines */}
               <div className="space-y-4 mb-6">
                 <div className="grid grid-cols-12 gap-2 text-sm font-semibold text-muted-foreground">
                   <div className="col-span-5">Ledger Account</div>
@@ -293,7 +289,6 @@ export default function PaymentVoucher() {
                 ))}
               </div>
 
-              {/* Totals */}
               <div className="border-t pt-4 mb-6">
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div className="flex justify-between">
@@ -319,7 +314,6 @@ export default function PaymentVoucher() {
                 )}
               </div>
 
-              {/* Narration */}
               <div>
                 <Label htmlFor="narration">Narration</Label>
                 <textarea
@@ -332,7 +326,6 @@ export default function PaymentVoucher() {
                 />
               </div>
 
-              {/* Action Buttons */}
               <div className="flex justify-end gap-2 mt-6 pt-6 border-t">
                 <Button variant="outline" onClick={() => router.push("/")}>
                   Cancel (Esc)
