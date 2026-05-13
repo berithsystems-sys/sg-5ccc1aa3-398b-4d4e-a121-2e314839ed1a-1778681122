@@ -27,7 +27,18 @@ export const companyService = {
     return data;
   },
 
-  async createCompany(company: Omit<Company, "id" | "owner_id" | "created_at" | "updated_at">) {
+  async getFinancialYearById(id: string) {
+    const { data, error } = await supabase
+      .from("financial_years")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async createCompany(company: Partial<Company> & { name: string; financial_year_start: string }) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
 
@@ -36,7 +47,7 @@ export const companyService = {
       .insert({
         ...company,
         owner_id: user.id,
-      })
+      } as any)
       .select()
       .single();
 
@@ -44,10 +55,15 @@ export const companyService = {
 
     // Create default financial year
     if (data) {
+      const start = new Date(company.financial_year_start);
+      const end = new Date(start);
+      end.setFullYear(end.getFullYear() + 1);
+      end.setDate(end.getDate() - 1);
+
       await this.createFinancialYear({
         company_id: data.id,
         year_start: company.financial_year_start,
-        year_end: new Date(new Date(company.financial_year_start).setFullYear(new Date(company.financial_year_start).getFullYear() + 1)),
+        year_end: end.toISOString().split("T")[0],
         is_current: true,
         is_locked: false,
       });

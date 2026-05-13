@@ -44,7 +44,7 @@ export function CompanySelector({ onCompanySelect }: CompanySelectorProps) {
 
   async function loadCompanies() {
     try {
-      const data = await companyService.getUserCompanies();
+      const data = await companyService.getCompanies();
       setCompanies(data);
       if (data.length > 0) {
         setSelectedCompany(data[0].id);
@@ -79,13 +79,12 @@ export function CompanySelector({ onCompanySelect }: CompanySelectorProps) {
         pan,
         financial_year_start: yearStart,
         currency,
+        city: "",
+        state: "",
+        pincode: "",
+        decimal_places: 2,
+        is_active: true
       });
-
-      await companyService.createFinancialYear(
-        company.id,
-        yearStart,
-        getYearEnd(yearStart)
-      );
 
       setIsCreateOpen(false);
       await loadCompanies();
