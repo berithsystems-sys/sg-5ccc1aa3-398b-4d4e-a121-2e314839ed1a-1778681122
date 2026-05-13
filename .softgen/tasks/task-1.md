@@ -1,6 +1,6 @@
 ---
 title: Database Schema & Core Authentication
-status: in_progress
+status: done
 priority: urgent
 type: feature
 tags: [database, auth, foundation]
