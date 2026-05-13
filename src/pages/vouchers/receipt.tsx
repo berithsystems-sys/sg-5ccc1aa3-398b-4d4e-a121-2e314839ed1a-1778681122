@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ledgerService } from "@/services/ledgerService";
 import { voucherService } from "@/services/voucherService";
+import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { ArrowLeft, Plus, Trash2, Save, Calculator } from "lucide-react";
 import { SEO } from "@/components/SEO";
@@ -116,10 +117,16 @@ export default function ReceiptVoucher() {
     setSaving(true);
     try {
       const companyId = sessionStorage.getItem("selectedCompanyId");
-      if (!companyId) return;
+      const yearId = sessionStorage.getItem("selectedYearId");
+      if (!companyId || !yearId) return;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
       await voucherService.createVoucher({
         company_id: companyId,
+        financial_year_id: yearId,
+        created_by: session.user.id,
         voucher_type: "Receipt",
         voucher_number: voucherNumber,
         voucher_date: voucherDate,
