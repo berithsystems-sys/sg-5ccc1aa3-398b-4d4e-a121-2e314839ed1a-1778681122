@@ -121,7 +121,7 @@ export default function PaymentVoucher() {
       await voucherService.createVoucher({
         company_id: companyId,
         voucher_type: "Payment",
-        voucher_number: parseInt(voucherNumber),
+        voucher_number: voucherNumber,
         voucher_date: voucherDate,
         total_amount: totals.debit,
         narration,
