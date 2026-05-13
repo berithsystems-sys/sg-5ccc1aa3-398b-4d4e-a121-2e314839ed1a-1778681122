@@ -63,6 +63,7 @@ export type Database = {
       companies: {
         Row: {
           address: string | null
+          church_code: string | null
           city: string | null
           created_at: string | null
           currency: string | null
@@ -71,6 +72,7 @@ export type Database = {
           gstin: string | null
           id: string
           is_active: boolean | null
+          is_headquarters: boolean | null
           name: string
           owner_id: string
           pan: string | null
@@ -80,6 +82,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          church_code?: string | null
           city?: string | null
           created_at?: string | null
           currency?: string | null
@@ -88,6 +91,7 @@ export type Database = {
           gstin?: string | null
           id?: string
           is_active?: boolean | null
+          is_headquarters?: boolean | null
           name: string
           owner_id: string
           pan?: string | null
@@ -97,6 +101,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          church_code?: string | null
           city?: string | null
           created_at?: string | null
           currency?: string | null
@@ -105,6 +110,7 @@ export type Database = {
           gstin?: string | null
           id?: string
           is_active?: boolean | null
+          is_headquarters?: boolean | null
           name?: string
           owner_id?: string
           pan?: string | null

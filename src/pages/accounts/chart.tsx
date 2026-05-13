@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ledgerService } from "@/services/ledgerService";
 import type { Tables } from "@/integrations/supabase/types";
-import { ChevronRight, Plus, BookOpen, FolderOpen, Building2, ArrowLeft } from "lucide-react";
+import { ChevronRight, Plus, BookOpen, FolderOpen, Building2, ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 
 type AccountGroup = Tables<"account_groups">;
@@ -22,6 +23,8 @@ export default function ChartOfAccounts() {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [isCreateLedgerOpen, setIsCreateLedgerOpen] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   
   // Group form
   const [groupName, setGroupName] = useState("");
@@ -42,6 +45,7 @@ export default function ChartOfAccounts() {
 
   async function loadData() {
     try {
+      setError("");
       const companyId = sessionStorage.getItem("selectedCompanyId");
       if (!companyId) {
         router.push("/");
@@ -55,16 +59,32 @@ export default function ChartOfAccounts() {
 
       setGroups(groupsData);
       setLedgers(ledgersData);
-    } catch (err) {
+      
+      // If no groups exist, seed default groups
+      if (groupsData.length === 0) {
+        await ledgerService.seedDefaultGroups(companyId);
+        const newGroups = await ledgerService.getAccountGroups(companyId);
+        setGroups(newGroups);
+        setSuccess("Default account groups have been created for you!");
+        setTimeout(() => setSuccess(""), 5000);
+      }
+    } catch (err: any) {
       console.error("Error loading chart of accounts:", err);
+      setError(`Failed to load accounts: ${err.message || "Unknown error"}`);
     }
   }
 
   async function handleCreateGroup(e: React.FormEvent) {
     e.preventDefault();
     try {
+      setError("");
+      setSuccess("");
+      
       const companyId = sessionStorage.getItem("selectedCompanyId");
-      if (!companyId) return;
+      if (!companyId) {
+        setError("No company selected. Please select a company first.");
+        return;
+      }
 
       await ledgerService.createAccountGroup({
         company_id: companyId,
@@ -78,17 +98,31 @@ export default function ChartOfAccounts() {
       setGroupName("");
       setParentGroup("");
       setGroupType("Assets");
+      setSuccess(`Group "${groupName}" created successfully!`);
+      setTimeout(() => setSuccess(""), 3000);
       await loadData();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error creating group:", err);
+      setError(`Failed to create group: ${err.message || "Unknown error"}`);
     }
   }
 
   async function handleCreateLedger(e: React.FormEvent) {
     e.preventDefault();
     try {
+      setError("");
+      setSuccess("");
+      
       const companyId = sessionStorage.getItem("selectedCompanyId");
-      if (!companyId) return;
+      if (!companyId) {
+        setError("No company selected. Please select a company first.");
+        return;
+      }
+
+      if (!ledgerGroup) {
+        setError("Please select an account group for the ledger.");
+        return;
+      }
 
       await ledgerService.createLedger({
         company_id: companyId,
@@ -109,9 +143,12 @@ export default function ChartOfAccounts() {
       setBalanceType("Dr");
       setGstEnabled(false);
       setGstin("");
+      setSuccess(`Ledger "${ledgerName}" created successfully!`);
+      setTimeout(() => setSuccess(""), 3000);
       await loadData();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error creating ledger:", err);
+      setError(`Failed to create ledger: ${err.message || "Unknown error"}`);
     }
   }
 
@@ -147,7 +184,9 @@ export default function ChartOfAccounts() {
               <BookOpen className="h-4 w-4 text-accent mr-2" />
               <span className="flex-1">{ledger.name}</span>
               <span className="text-xs font-mono text-muted-foreground">
-                {ledger.opening_balance > 0 ? `${ledger.opening_balance} ${ledger.balance_type}` : "-"}
+                {ledger.opening_balance && Number(ledger.opening_balance) > 0 
+                  ? `${Number(ledger.opening_balance).toFixed(2)} ${ledger.balance_type}` 
+                  : "-"}
               </span>
             </div>
           ))}
@@ -346,6 +385,20 @@ export default function ChartOfAccounts() {
         {/* Main Content */}
         <div className="container py-8">
           <div className="max-w-5xl mx-auto">
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            {success && (
+              <Alert className="mb-4 border-green-200 bg-green-50 text-green-900">
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertDescription>{success}</AlertDescription>
+              </Alert>
+            )}
+
             <Tabs defaultValue="tree">
               <TabsList>
                 <TabsTrigger value="tree">Hierarchical View</TabsTrigger>
@@ -420,8 +473,8 @@ export default function ChartOfAccounts() {
                                   <td>{ledger.name}</td>
                                   <td>{group?.name || "-"}</td>
                                   <td className="text-right">
-                                    {ledger.opening_balance > 0 
-                                      ? `${ledger.opening_balance.toFixed(2)} ${ledger.balance_type}`
+                                    {ledger.opening_balance && Number(ledger.opening_balance) > 0 
+                                      ? `${Number(ledger.opening_balance).toFixed(2)} ${ledger.balance_type}`
                                       : "-"}
                                   </td>
                                   <td>{ledger.gst_applicable ? ledger.gstin || "Yes" : "-"}</td>
