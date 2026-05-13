@@ -98,15 +98,16 @@ export function CompanySelector() {
         pan: formData.pan || null,
         currency: formData.currency,
         is_headquarters: formData.is_headquarters,
+        financial_year_start: formData.financial_year_start,
       });
 
       // Create financial year for the company
       await companyService.createFinancialYear({
         company_id: newCompany.id,
-        year_name: `FY ${new Date(formData.financial_year_start).getFullYear()}-${new Date(formData.financial_year_start).getFullYear() + 1}`,
-        start_date: formData.financial_year_start,
-        end_date: new Date(new Date(formData.financial_year_start).setFullYear(new Date(formData.financial_year_start).getFullYear() + 1)).toISOString().split('T')[0],
-        is_active: true,
+        year_start: formData.financial_year_start,
+        year_end: new Date(new Date(formData.financial_year_start).setFullYear(new Date(formData.financial_year_start).getFullYear() + 1)).toISOString().split('T')[0],
+        is_current: true,
+        is_locked: false,
       });
 
       alert("Church created successfully!");
@@ -192,7 +193,7 @@ export function CompanySelector() {
                 <SelectContent>
                   {years.map((year) => (
                     <SelectItem key={year.id} value={year.id}>
-                      {year.year_name}
+                      {year.year_start} to {year.year_end}
                     </SelectItem>
                   ))}
                 </SelectContent>
