@@ -26,7 +26,7 @@ export default function ChartOfAccounts() {
   // Group form
   const [groupName, setGroupName] = useState("");
   const [parentGroup, setParentGroup] = useState<string>("");
-  const [groupNature, setGroupNature] = useState<AccountGroup["nature"]>("Assets");
+  const [groupType, setGroupType] = useState<AccountGroup["group_type"]>("Assets");
   
   // Ledger form
   const [ledgerName, setLedgerName] = useState("");
@@ -49,7 +49,7 @@ export default function ChartOfAccounts() {
       }
 
       const [groupsData, ledgersData] = await Promise.all([
-        ledgerService.getGroups(companyId),
+        ledgerService.getAccountGroups(companyId),
         ledgerService.getLedgers(companyId)
       ]);
 
@@ -66,18 +66,18 @@ export default function ChartOfAccounts() {
       const companyId = sessionStorage.getItem("selectedCompanyId");
       if (!companyId) return;
 
-      await ledgerService.createGroup({
+      await ledgerService.createAccountGroup({
         company_id: companyId,
         name: groupName,
         parent_id: parentGroup || null,
-        nature: groupNature,
-        is_system: false,
+        group_type: groupType,
+        affects_gross_profit: false,
       });
 
       setIsCreateGroupOpen(false);
       setGroupName("");
       setParentGroup("");
-      setGroupNature("Assets");
+      setGroupType("Assets");
       await loadData();
     } catch (err) {
       console.error("Error creating group:", err);
@@ -95,10 +95,11 @@ export default function ChartOfAccounts() {
         name: ledgerName,
         group_id: ledgerGroup,
         opening_balance: parseFloat(openingBalance),
-        opening_balance_type: balanceType,
-        is_gst_applicable: gstEnabled,
+        balance_type: balanceType,
+        gst_applicable: gstEnabled,
         gstin: gstEnabled ? gstin : null,
         is_active: true,
+        state_code: null
       });
 
       setIsCreateLedgerOpen(false);
@@ -134,7 +135,7 @@ export default function ChartOfAccounts() {
           <div className="flex items-center py-2 hover:bg-muted/50 px-2 rounded cursor-pointer group">
             <FolderOpen className="h-4 w-4 text-primary mr-2" />
             <span className="font-medium flex-1">{group.name}</span>
-            <span className="text-xs text-muted-foreground">{group.nature}</span>
+            <span className="text-xs text-muted-foreground">{group.group_type}</span>
           </div>
           
           {groupLedgers.map(ledger => (
@@ -146,7 +147,7 @@ export default function ChartOfAccounts() {
               <BookOpen className="h-4 w-4 text-accent mr-2" />
               <span className="flex-1">{ledger.name}</span>
               <span className="text-xs font-mono text-muted-foreground">
-                {ledger.opening_balance > 0 ? `${ledger.opening_balance} ${ledger.opening_balance_type}` : "-"}
+                {ledger.opening_balance > 0 ? `${ledger.opening_balance} ${ledger.balance_type}` : "-"}
               </span>
             </div>
           ))}
@@ -216,9 +217,9 @@ export default function ChartOfAccounts() {
                   </div>
                   
                   <div>
-                    <Label htmlFor="groupNature">Nature *</Label>
-                    <Select value={groupNature} onValueChange={(v) => setGroupNature(v as AccountGroup["nature"])}>
-                      <SelectTrigger id="groupNature">
+                    <Label htmlFor="groupType">Nature *</Label>
+                    <Select value={groupType} onValueChange={(v) => setGroupType(v as AccountGroup["group_type"])}>
+                      <SelectTrigger id="groupType">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -380,7 +381,7 @@ export default function ChartOfAccounts() {
                             <tr>
                               <th>Group Name</th>
                               <th>Parent Group</th>
-                              <th>Nature</th>
+                              <th>Group Type</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -390,7 +391,7 @@ export default function ChartOfAccounts() {
                                 <tr key={group.id}>
                                   <td>{group.name}</td>
                                   <td>{parent?.name || "Primary"}</td>
-                                  <td>{group.nature}</td>
+                                  <td>{group.group_type}</td>
                                 </tr>
                               );
                             })}
@@ -420,10 +421,10 @@ export default function ChartOfAccounts() {
                                   <td>{group?.name || "-"}</td>
                                   <td className="text-right">
                                     {ledger.opening_balance > 0 
-                                      ? `${ledger.opening_balance.toFixed(2)} ${ledger.opening_balance_type}`
+                                      ? `${ledger.opening_balance.toFixed(2)} ${ledger.balance_type}`
                                       : "-"}
                                   </td>
-                                  <td>{ledger.is_gst_applicable ? ledger.gstin || "Yes" : "-"}</td>
+                                  <td>{ledger.gst_applicable ? ledger.gstin || "Yes" : "-"}</td>
                                 </tr>
                               );
                             })}
