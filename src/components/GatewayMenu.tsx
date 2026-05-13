@@ -1,170 +1,283 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { companyService, type Company } from "@/services/companyService";
-import { Building2, FileText, Package, BarChart3, Settings, LogOut } from "lucide-react";
 import { authService } from "@/services/authService";
-import { useRouter } from "next/router";
+import { companyService } from "@/services/companyService";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import type { Tables } from "@/integrations/supabase/types";
+import { 
+  FileText, 
+  Receipt, 
+  CreditCard, 
+  BookOpen, 
+  Package, 
+  TrendingUp,
+  Settings,
+  LogOut,
+  ChevronDown,
+  Building2
+} from "lucide-react";
 
-export function GatewayMenu() {
+type Company = Tables<"companies">;
+type FinancialYear = Tables<"financial_years">;
+
+interface GatewayMenuProps {
+  companyId: string;
+  yearId: string;
+  onChangeCompany: () => void;
+}
+
+export function GatewayMenu({ companyId, yearId, onChangeCompany }: GatewayMenuProps) {
   const router = useRouter();
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<string>("");
-  const [loading, setLoading] = useState(true);
+  const [company, setCompany] = useState<Company | null>(null);
+  const [year, setYear] = useState<FinancialYear | null>(null);
 
   useEffect(() => {
-    loadCompanies();
-  }, []);
+    loadCompanyData();
+  }, [companyId, yearId]);
 
-  async function loadCompanies() {
+  async function loadCompanyData() {
     try {
-      const data = await companyService.getCompanies();
-      setCompanies(data);
-      if (data.length > 0 && !selectedCompany) {
-        setSelectedCompany(data[0].id);
-      }
-    } catch (error) {
-      console.error("Failed to load companies:", error);
-    } finally {
-      setLoading(false);
+      const [companyData, yearData] = await Promise.all([
+        companyService.getCompanyById(companyId),
+        companyService.getFinancialYearById(yearId)
+      ]);
+      setCompany(companyData);
+      setYear(yearData);
+    } catch (err) {
+      console.error("Error loading company data:", err);
     }
   }
+
+  useKeyboardShortcuts([
+    { key: "F4", action: () => console.log("Payment voucher") },
+    { key: "F5", action: () => console.log("Receipt voucher") },
+    { key: "F6", action: () => console.log("Contra voucher") },
+    { key: "F7", action: () => console.log("Journal voucher") },
+    { key: "F8", action: () => console.log("Sales voucher") },
+    { key: "F9", action: () => console.log("Purchase voucher") },
+    { key: "L", alt: true, action: () => console.log("Create Ledger") },
+    { key: "G", alt: true, action: () => console.log("Create Group") },
+    { key: "V", alt: true, action: () => console.log("Voucher Entry") },
+  ]);
 
   async function handleLogout() {
     await authService.signOut();
     router.push("/auth/login");
   }
 
-  const menuSections = [
-    {
-      title: "Accounts Info",
-      icon: FileText,
-      items: [
-        { label: "Ledgers", key: "Alt+L", path: "/ledgers" },
-        { label: "Groups", key: "Alt+G", path: "/groups" },
-        { label: "Vouchers", key: "Alt+V", path: "/vouchers" },
-      ],
-    },
-    {
-      title: "Inventory Info",
-      icon: Package,
-      items: [
-        { label: "Stock Items", key: "Alt+I", path: "/items" },
-        { label: "Stock Groups", key: "Alt+S", path: "/stock-groups" },
-        { label: "Units", key: "Alt+U", path: "/units" },
-      ],
-    },
-    {
-      title: "Display",
-      icon: BarChart3,
-      items: [
-        { label: "Trial Balance", key: "F3", path: "/reports/trial-balance" },
-        { label: "Balance Sheet", key: "Alt+B", path: "/reports/balance-sheet" },
-        { label: "P&L Statement", key: "Alt+P", path: "/reports/pl" },
-      ],
-    },
-  ];
-
-  const voucherShortcuts = [
-    { label: "Payment", key: "F4", type: "Payment" },
-    { label: "Receipt", key: "F5", type: "Receipt" },
-    { label: "Contra", key: "F6", type: "Contra" },
-    { label: "Journal", key: "F7", type: "Journal" },
-    { label: "Sales", key: "F8", type: "Sales" },
-    { label: "Purchase", key: "F9", type: "Purchase" },
-  ];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="tally-header px-4 py-3 flex items-center justify-between">
+      <div className="tally-header px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Building2 className="w-6 h-6" />
-          <h1 className="text-xl font-bold">Tally Prime</h1>
+          <Building2 className="h-6 w-6" />
+          <div>
+            <h1 className="text-lg font-bold">TALLY PRIME</h1>
+            <p className="text-xs opacity-90">{company?.name || "Loading..."}</p>
+          </div>
         </div>
         <div className="flex items-center gap-4">
-          <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-            <SelectTrigger className="w-64 bg-white">
-              <SelectValue placeholder="Select Company" />
-            </SelectTrigger>
-            <SelectContent>
-              {companies.map((company) => (
-                <SelectItem key={company.id} value={company.id}>
-                  {company.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white hover:text-white">
-            <LogOut className="w-4 h-4 mr-2" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onChangeCompany}
+            className="text-primary-foreground hover:bg-primary/90"
+          >
+            Change Company
+          </Button>
+          <span className="text-sm">
+            FY: {year ? `${new Date(year.year_start).getFullYear()}-${new Date(year.year_end).getFullYear()}` : "..."}
+          </span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleLogout}
+            className="text-primary-foreground hover:bg-primary/90 gap-2"
+          >
+            <LogOut className="h-4 w-4" />
             Logout
           </Button>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Gateway Menu */}
       <div className="container py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {menuSections.map((section) => (
-            <Card key={section.title} className="tally-panel p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <section.icon className="w-5 h-5 text-primary" />
-                <h2 className="font-semibold text-lg">{section.title}</h2>
-              </div>
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl font-bold mb-8 text-center">Gateway of Tally</h2>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Accounts Section */}
+            <Card className="p-6">
+              <h3 className="font-bold text-lg mb-4 text-primary border-b border-border pb-2">
+                Accounts
+              </h3>
               <div className="space-y-2">
-                {section.items.map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={() => router.push(item.path)}
-                    className="w-full text-left px-3 py-2 rounded hover:bg-muted transition-colors flex items-center justify-between group"
-                  >
-                    <span>{item.label}</span>
-                    <span className="text-xs font-mono text-muted-foreground group-hover:text-accent">
-                      {item.key}
-                    </span>
-                  </button>
-                ))}
+                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+                  <BookOpen className="h-4 w-4" />
+                  <div className="text-left flex-1">
+                    <div className="font-medium">Chart of Accounts</div>
+                    <div className="text-xs text-muted-foreground">Alt+L - Ledgers & Groups</div>
+                  </div>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+                  <FileText className="h-4 w-4" />
+                  <div className="text-left flex-1">
+                    <div className="font-medium">Voucher Entry</div>
+                    <div className="text-xs text-muted-foreground">Alt+V - Create Vouchers</div>
+                  </div>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+                  <CreditCard className="h-4 w-4" />
+                  <div className="text-left flex-1">
+                    <div className="font-medium">Banking</div>
+                    <div className="text-xs text-muted-foreground">Bank Reconciliation</div>
+                  </div>
+                </Button>
               </div>
             </Card>
-          ))}
-        </div>
 
-        {/* Voucher Entry Shortcuts */}
-        <Card className="tally-panel p-6">
-          <h2 className="font-semibold text-lg mb-4">Voucher Entry (Function Keys)</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {voucherShortcuts.map((voucher) => (
-              <Button
-                key={voucher.type}
-                variant="outline"
-                className="flex flex-col h-auto py-4 hover:bg-accent hover:text-accent-foreground"
-                onClick={() => router.push(`/vouchers/${voucher.type.toLowerCase()}`)}
-              >
-                <span className="font-mono text-xs text-muted-foreground mb-1">{voucher.key}</span>
-                <span className="font-medium">{voucher.label}</span>
-              </Button>
-            ))}
+            {/* Inventory Section */}
+            <Card className="p-6">
+              <h3 className="font-bold text-lg mb-4 text-primary border-b border-border pb-2">
+                Inventory
+              </h3>
+              <div className="space-y-2">
+                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+                  <Package className="h-4 w-4" />
+                  <div className="text-left flex-1">
+                    <div className="font-medium">Stock Items</div>
+                    <div className="text-xs text-muted-foreground">Items & Units</div>
+                  </div>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+                  <Package className="h-4 w-4" />
+                  <div className="text-left flex-1">
+                    <div className="font-medium">Stock Groups</div>
+                    <div className="text-xs text-muted-foreground">Item Categories</div>
+                  </div>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+                  <Package className="h-4 w-4" />
+                  <div className="text-left flex-1">
+                    <div className="font-medium">Godowns</div>
+                    <div className="text-xs text-muted-foreground">Warehouse Management</div>
+                  </div>
+                </Button>
+              </div>
+            </Card>
+
+            {/* Reports Section */}
+            <Card className="p-6">
+              <h3 className="font-bold text-lg mb-4 text-primary border-b border-border pb-2">
+                Reports
+              </h3>
+              <div className="space-y-2">
+                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+                  <TrendingUp className="h-4 w-4" />
+                  <div className="text-left flex-1">
+                    <div className="font-medium">Financial Statements</div>
+                    <div className="text-xs text-muted-foreground">P&L, Balance Sheet</div>
+                  </div>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+                  <Receipt className="h-4 w-4" />
+                  <div className="text-left flex-1">
+                    <div className="font-medium">Day Book</div>
+                    <div className="text-xs text-muted-foreground">All Vouchers</div>
+                  </div>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+                  <FileText className="h-4 w-4" />
+                  <div className="text-left flex-1">
+                    <div className="font-medium">GST Reports</div>
+                    <div className="text-xs text-muted-foreground">GSTR-1, GSTR-3B</div>
+                  </div>
+                </Button>
+              </div>
+            </Card>
+
+            {/* Vouchers Quick Entry */}
+            <Card className="p-6 md:col-span-2">
+              <h3 className="font-bold text-lg mb-4 text-primary border-b border-border pb-2">
+                Quick Voucher Entry
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button variant="outline" className="h-auto py-4">
+                  <div className="text-center">
+                    <div className="font-bold text-accent">F4</div>
+                    <div className="text-sm">Payment</div>
+                  </div>
+                </Button>
+                <Button variant="outline" className="h-auto py-4">
+                  <div className="text-center">
+                    <div className="font-bold text-accent">F5</div>
+                    <div className="text-sm">Receipt</div>
+                  </div>
+                </Button>
+                <Button variant="outline" className="h-auto py-4">
+                  <div className="text-center">
+                    <div className="font-bold text-accent">F6</div>
+                    <div className="text-sm">Contra</div>
+                  </div>
+                </Button>
+                <Button variant="outline" className="h-auto py-4">
+                  <div className="text-center">
+                    <div className="font-bold text-accent">F7</div>
+                    <div className="text-sm">Journal</div>
+                  </div>
+                </Button>
+                <Button variant="outline" className="h-auto py-4">
+                  <div className="text-center">
+                    <div className="font-bold text-accent">F8</div>
+                    <div className="text-sm">Sales</div>
+                  </div>
+                </Button>
+                <Button variant="outline" className="h-auto py-4">
+                  <div className="text-center">
+                    <div className="font-bold text-accent">F9</div>
+                    <div className="text-sm">Purchase</div>
+                  </div>
+                </Button>
+                <Button variant="outline" className="h-auto py-4">
+                  <div className="text-center">
+                    <div className="font-bold text-accent">F10</div>
+                    <div className="text-sm">Credit Note</div>
+                  </div>
+                </Button>
+                <Button variant="outline" className="h-auto py-4">
+                  <div className="text-center">
+                    <div className="font-bold text-accent">F11</div>
+                    <div className="text-sm">Debit Note</div>
+                  </div>
+                </Button>
+              </div>
+            </Card>
+
+            {/* Settings */}
+            <Card className="p-6">
+              <h3 className="font-bold text-lg mb-4 text-primary border-b border-border pb-2">
+                Company
+              </h3>
+              <div className="space-y-2">
+                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+                  <Settings className="h-4 w-4" />
+                  <div className="text-left flex-1">
+                    <div className="font-medium">Company Settings</div>
+                    <div className="text-xs text-muted-foreground">Details & Configuration</div>
+                  </div>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+                  <Building2 className="h-4 w-4" />
+                  <div className="text-left flex-1">
+                    <div className="font-medium">Financial Year</div>
+                    <div className="text-xs text-muted-foreground">Year Management</div>
+                  </div>
+                </Button>
+              </div>
+            </Card>
           </div>
-        </Card>
-
-        {/* Bottom Action Buttons */}
-        <div className="mt-8 flex gap-4">
-          <Button onClick={() => router.push("/company/create")} className="bg-accent hover:bg-accent/90">
-            Create Company
-          </Button>
-          <Button variant="outline" onClick={() => router.push("/company/settings")}>
-            <Settings className="w-4 h-4 mr-2" />
-            Company Settings
-          </Button>
         </div>
       </div>
     </div>

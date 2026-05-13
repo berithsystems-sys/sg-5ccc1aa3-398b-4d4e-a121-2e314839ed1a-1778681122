@@ -2,11 +2,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { authService } from "@/services/authService";
 import { GatewayMenu } from "@/components/GatewayMenu";
+import { CompanySelector } from "@/components/CompanySelector";
+import { SEO } from "@/components/SEO";
 
-export default function HomePage() {
+export default function Home() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const [selectedYearId, setSelectedYearId] = useState<string | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -28,10 +32,20 @@ export default function HomePage() {
     }
   }
 
+  function handleCompanySelect(companyId: string, yearId: string) {
+    setSelectedCompanyId(companyId);
+    setSelectedYearId(yearId);
+  }
+
+  function handleChangeCompany() {
+    setSelectedCompanyId(null);
+    setSelectedYearId(null);
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -40,5 +54,29 @@ export default function HomePage() {
     return null;
   }
 
-  return <GatewayMenu />;
+  if (!selectedCompanyId || !selectedYearId) {
+    return (
+      <>
+        <SEO 
+          title="Select Company - Tally Prime"
+          description="Select or create a company to continue"
+        />
+        <CompanySelector onCompanySelect={handleCompanySelect} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <SEO 
+        title="Gateway - Tally Prime"
+        description="Accounting & Inventory ERP System"
+      />
+      <GatewayMenu 
+        companyId={selectedCompanyId} 
+        yearId={selectedYearId}
+        onChangeCompany={handleChangeCompany}
+      />
+    </>
+  );
 }

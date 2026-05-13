@@ -1,6 +1,6 @@
 ---
 title: Gateway Menu & Company Selection
-status: todo
+status: in_progress
 priority: urgent
 type: feature
 tags: [ui, navigation, company]
