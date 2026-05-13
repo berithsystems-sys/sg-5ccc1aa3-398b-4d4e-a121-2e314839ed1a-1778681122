@@ -88,7 +88,7 @@ export function GatewayMenu() {
           <div>
             <div className="flex items-center gap-2">
               {isHQ && <Crown className="h-5 w-5 text-amber-400" />}
-              <h1 className="text-xl font-bold">Tally Prime - Gateway of {selectedCompany.name}</h1>
+              <h1 className="text-xl font-bold">EBC HQ Accounting - Gateway of {selectedCompany.name}</h1>
             </div>
             <p className="text-sm text-primary-foreground/80 mt-1">
               {selectedCompany.church_code && `${selectedCompany.church_code} • `}

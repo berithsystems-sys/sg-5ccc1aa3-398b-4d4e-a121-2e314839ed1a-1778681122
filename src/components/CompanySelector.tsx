@@ -13,7 +13,11 @@ import type { Tables } from "@/integrations/supabase/types";
 type Company = Tables<"companies">;
 type FinancialYear = Tables<"financial_years">;
 
-export function CompanySelector() {
+interface CompanySelectorProps {
+  onCompanySelect?: (companyId: string, yearId: string) => void;
+}
+
+export function CompanySelector({ onCompanySelect }: CompanySelectorProps = {}) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [years, setYears] = useState<FinancialYear[]>([]);
@@ -219,6 +223,23 @@ export function CompanySelector() {
               </div>
             </div>
           )}
+
+          <div className="flex justify-end pt-4 border-t">
+            <Button 
+              onClick={() => {
+                if (selectedCompany && selectedYear && onCompanySelect) {
+                  onCompanySelect(selectedCompany.id, selectedYear.id);
+                } else if (!onCompanySelect) {
+                  // If used standalone, we can just reload the page to pick up the new session vars
+                  window.location.reload();
+                }
+              }}
+              disabled={!selectedCompany || !selectedYear}
+              size="lg"
+            >
+              Continue to Gateway
+            </Button>
+          </div>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
