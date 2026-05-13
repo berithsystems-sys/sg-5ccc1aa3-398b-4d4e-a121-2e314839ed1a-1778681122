@@ -2,172 +2,225 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { authService } from "@/services/authService";
 import { companyService } from "@/services/companyService";
+import { authService } from "@/services/authService";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import type { Tables } from "@/integrations/supabase/types";
 import { 
-  FileText, 
-  Receipt, 
-  CreditCard, 
-  BookOpen, 
-  Package, 
-  TrendingUp,
-  Settings,
-  LogOut,
-  Building2
+  FileText, BookOpen, BarChart3, Settings, LogOut, 
+  Building2, Calendar, Crown, TrendingUp
 } from "lucide-react";
+import { CompanySelector } from "./CompanySelector";
 
 type Company = Tables<"companies">;
 type FinancialYear = Tables<"financial_years">;
 
-interface GatewayMenuProps {
-  companyId: string;
-  yearId: string;
-  onChangeCompany: () => void;
-}
-
-export function GatewayMenu({ companyId, yearId, onChangeCompany }: GatewayMenuProps) {
+export function GatewayMenu() {
   const router = useRouter();
-  const [company, setCompany] = useState<Company | null>(null);
-  const [year, setYear] = useState<FinancialYear | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [selectedYear, setSelectedYear] = useState<FinancialYear | null>(null);
+  const [isCompanyOpen, setIsCompanyOpen] = useState(false);
+  const [isHQ, setIsHQ] = useState(false);
 
   useEffect(() => {
     loadCompanyData();
-    // Store in sessionStorage for child pages
-    sessionStorage.setItem("selectedCompanyId", companyId);
-    sessionStorage.setItem("selectedYearId", yearId);
-  }, [companyId, yearId]);
-
-  async function loadCompanyData() {
-    try {
-      const [companyData, yearData] = await Promise.all([
-        companyService.getCompanyById(companyId),
-        companyService.getFinancialYearById(yearId)
-      ]);
-      setCompany(companyData);
-      setYear(yearData);
-    } catch (err) {
-      console.error("Error loading company data:", err);
-    }
-  }
+  }, []);
 
   useKeyboardShortcuts([
     { key: "F4", action: () => router.push("/vouchers/payment") },
     { key: "F5", action: () => router.push("/vouchers/receipt") },
     { key: "F6", action: () => router.push("/vouchers/contra") },
     { key: "F7", action: () => router.push("/vouchers/journal") },
-    { key: "F8", action: () => router.push("/vouchers/sales") },
-    { key: "F9", action: () => router.push("/vouchers/purchase") },
-    { key: "L", alt: true, action: () => router.push("/accounts/chart") },
-    { key: "G", alt: true, action: () => router.push("/accounts/chart") },
-  ]);
+    { key: "l", alt: true, action: () => router.push("/accounts/chart?tab=ledgers") },
+    { key: "g", alt: true, action: () => router.push("/accounts/chart?tab=groups") },
+    { key: "v", alt: true, action: () => router.push("/vouchers/payment") },
+    { key: "c", alt: true, action: () => setIsCompanyOpen(true) },
+    { key: "r", alt: true, action: () => isHQ && router.push("/reports/consolidated") },
+  ], !!selectedCompany);
+
+  async function loadCompanyData() {
+    try {
+      const companyId = sessionStorage.getItem("selectedCompanyId");
+      const yearId = sessionStorage.getItem("selectedYearId");
+
+      if (!companyId || !yearId) {
+        setIsCompanyOpen(true);
+        return;
+      }
+
+      const [company, year] = await Promise.all([
+        companyService.getCompanyById(companyId),
+        companyService.getFinancialYearById(yearId)
+      ]);
+
+      setSelectedCompany(company);
+      setSelectedYear(year);
+      setIsHQ(company.is_headquarters || false);
+    } catch (err) {
+      console.error("Error loading company data:", err);
+      setIsCompanyOpen(true);
+    }
+  }
 
   async function handleLogout() {
     await authService.signOut();
     router.push("/auth/login");
   }
 
+  function handleChangeCompany() {
+    setIsCompanyOpen(true);
+  }
+
+  function handleCompanySelected(companyId: string, yearId: string) {
+    setIsCompanyOpen(false);
+    loadCompanyData();
+  }
+
+  if (isCompanyOpen || !selectedCompany || !selectedYear) {
+    return <CompanySelector onCompanySelect={handleCompanySelected} />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="tally-header px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Building2 className="h-6 w-6" />
+      <div className="tally-header px-6 py-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold">TALLY PRIME</h1>
-            <p className="text-xs opacity-90">{company?.name || "Loading..."}</p>
+            <div className="flex items-center gap-2">
+              {isHQ && <Crown className="h-5 w-5 text-amber-400" />}
+              <h1 className="text-xl font-bold">Tally Prime - Gateway of {selectedCompany.name}</h1>
+            </div>
+            <p className="text-sm text-primary-foreground/80 mt-1">
+              {selectedCompany.church_code && `${selectedCompany.church_code} • `}
+              Period: {new Date(selectedYear.year_start).toLocaleDateString()} - {new Date(selectedYear.year_end).toLocaleDateString()}
+            </p>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onChangeCompany}
-            className="text-primary-foreground hover:bg-primary/90"
-          >
-            Change Company
-          </Button>
-          <span className="text-sm">
-            FY: {year ? `${new Date(year.year_start).getFullYear()}-${new Date(year.year_end).getFullYear()}` : "..."}
-          </span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleLogout}
-            className="text-primary-foreground hover:bg-primary/90 gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={handleChangeCompany}
+              className="text-primary-foreground hover:bg-primary/90"
+            >
+              <Building2 className="h-4 w-4 mr-2" />
+              Change Church
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={handleLogout}
+              className="text-primary-foreground hover:bg-primary/90"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Gateway Menu */}
-      <div className="container py-8">
+      {/* Main Gateway Menu */}
+      <div className="container py-12">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl font-bold mb-8 text-center">Gateway of Tally</h2>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Accounts Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Vouchers Section */}
             <Card className="p-6">
-              <h3 className="font-bold text-lg mb-4 text-primary border-b border-border pb-2">
-                Accounts
-              </h3>
+              <div className="flex items-center gap-3 mb-6">
+                <FileText className="h-6 w-6 text-primary" />
+                <h2 className="text-xl font-bold">Vouchers</h2>
+              </div>
+              
               <div className="space-y-2">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start gap-2 h-auto py-3"
-                  onClick={() => router.push("/accounts/chart")}
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3 px-4 text-left"
+                  onClick={() => router.push("/vouchers/payment")}
                 >
-                  <BookOpen className="h-4 w-4" />
-                  <div className="text-left flex-1">
-                    <div className="font-medium">Chart of Accounts</div>
-                    <div className="text-xs text-muted-foreground">Alt+L - Ledgers & Groups</div>
+                  <div className="flex items-center gap-3">
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">F4</kbd>
+                    <div>
+                      <div className="font-semibold">Payment</div>
+                      <div className="text-xs text-muted-foreground">Cash/bank payments</div>
+                    </div>
                   </div>
                 </Button>
-                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
-                  <FileText className="h-4 w-4" />
-                  <div className="text-left flex-1">
-                    <div className="font-medium">Voucher Entry</div>
-                    <div className="text-xs text-muted-foreground">Alt+V - Create Vouchers</div>
+
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3 px-4 text-left"
+                  onClick={() => router.push("/vouchers/receipt")}
+                >
+                  <div className="flex items-center gap-3">
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">F5</kbd>
+                    <div>
+                      <div className="font-semibold">Receipt</div>
+                      <div className="text-xs text-muted-foreground">Cash/bank receipts</div>
+                    </div>
                   </div>
                 </Button>
-                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
-                  <CreditCard className="h-4 w-4" />
-                  <div className="text-left flex-1">
-                    <div className="font-medium">Banking</div>
-                    <div className="text-xs text-muted-foreground">Bank Reconciliation</div>
+
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3 px-4 text-left"
+                  onClick={() => router.push("/vouchers/contra")}
+                >
+                  <div className="flex items-center gap-3">
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">F6</kbd>
+                    <div>
+                      <div className="font-semibold">Contra</div>
+                      <div className="text-xs text-muted-foreground">Bank-to-bank transfers</div>
+                    </div>
+                  </div>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3 px-4 text-left"
+                  onClick={() => router.push("/vouchers/journal")}
+                >
+                  <div className="flex items-center gap-3">
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">F7</kbd>
+                    <div>
+                      <div className="font-semibold">Journal</div>
+                      <div className="text-xs text-muted-foreground">Adjustments & corrections</div>
+                    </div>
                   </div>
                 </Button>
               </div>
             </Card>
 
-            {/* Inventory Section */}
+            {/* Accounts Section */}
             <Card className="p-6">
-              <h3 className="font-bold text-lg mb-4 text-primary border-b border-border pb-2">
-                Inventory
-              </h3>
+              <div className="flex items-center gap-3 mb-6">
+                <BookOpen className="h-6 w-6 text-accent" />
+                <h2 className="text-xl font-bold">Accounts</h2>
+              </div>
+              
               <div className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
-                  <Package className="h-4 w-4" />
-                  <div className="text-left flex-1">
-                    <div className="font-medium">Stock Items</div>
-                    <div className="text-xs text-muted-foreground">Items & Units</div>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3 px-4 text-left"
+                  onClick={() => router.push("/accounts/chart")}
+                >
+                  <div className="flex items-center gap-3">
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Alt+L</kbd>
+                    <div>
+                      <div className="font-semibold">Chart of Accounts</div>
+                      <div className="text-xs text-muted-foreground">Groups & ledgers</div>
+                    </div>
                   </div>
                 </Button>
-                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
-                  <Package className="h-4 w-4" />
-                  <div className="text-left flex-1">
-                    <div className="font-medium">Stock Groups</div>
-                    <div className="text-xs text-muted-foreground">Item Categories</div>
-                  </div>
-                </Button>
-                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
-                  <Package className="h-4 w-4" />
-                  <div className="text-left flex-1">
-                    <div className="font-medium">Godowns</div>
-                    <div className="text-xs text-muted-foreground">Warehouse Management</div>
+
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3 px-4 text-left"
+                  onClick={() => alert("Opening balances coming soon")}
+                >
+                  <div className="flex items-center gap-3">
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Alt+O</kbd>
+                    <div>
+                      <div className="font-semibold">Opening Balances</div>
+                      <div className="text-xs text-muted-foreground">Set starting balances</div>
+                    </div>
                   </div>
                 </Button>
               </div>
@@ -175,118 +228,90 @@ export function GatewayMenu({ companyId, yearId, onChangeCompany }: GatewayMenuP
 
             {/* Reports Section */}
             <Card className="p-6">
-              <h3 className="font-bold text-lg mb-4 text-primary border-b border-border pb-2">
-                Reports
-              </h3>
-              <div className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
-                  <TrendingUp className="h-4 w-4" />
-                  <div className="text-left flex-1">
-                    <div className="font-medium">Financial Statements</div>
-                    <div className="text-xs text-muted-foreground">P&L, Balance Sheet</div>
-                  </div>
-                </Button>
-                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
-                  <Receipt className="h-4 w-4" />
-                  <div className="text-left flex-1">
-                    <div className="font-medium">Day Book</div>
-                    <div className="text-xs text-muted-foreground">All Vouchers</div>
-                  </div>
-                </Button>
-                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
-                  <FileText className="h-4 w-4" />
-                  <div className="text-left flex-1">
-                    <div className="font-medium">GST Reports</div>
-                    <div className="text-xs text-muted-foreground">GSTR-1, GSTR-3B</div>
-                  </div>
-                </Button>
+              <div className="flex items-center gap-3 mb-6">
+                <BarChart3 className="h-6 w-6 text-green-600" />
+                <h2 className="text-xl font-bold">Reports</h2>
               </div>
-            </Card>
-
-            {/* Vouchers Quick Entry */}
-            <Card className="p-6 md:col-span-2">
-              <h3 className="font-bold text-lg mb-4 text-primary border-b border-border pb-2">
-                Quick Voucher Entry
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-4"
-                  onClick={() => router.push("/vouchers/payment")}
+              
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3 px-4 text-left"
+                  onClick={() => alert("Day Book coming soon")}
                 >
-                  <div className="text-center">
-                    <div className="font-bold text-accent">F4</div>
-                    <div className="text-sm">Payment</div>
+                  <div className="flex items-center gap-3">
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Alt+D</kbd>
+                    <div>
+                      <div className="font-semibold">Day Book</div>
+                      <div className="text-xs text-muted-foreground">Daily transactions</div>
+                    </div>
                   </div>
                 </Button>
-                <Button variant="outline" className="h-auto py-4">
-                  <div className="text-center">
-                    <div className="font-bold text-accent">F5</div>
-                    <div className="text-sm">Receipt</div>
-                  </div>
-                </Button>
-                <Button variant="outline" className="h-auto py-4">
-                  <div className="text-center">
-                    <div className="font-bold text-accent">F6</div>
-                    <div className="text-sm">Contra</div>
-                  </div>
-                </Button>
-                <Button variant="outline" className="h-auto py-4">
-                  <div className="text-center">
-                    <div className="font-bold text-accent">F7</div>
-                    <div className="text-sm">Journal</div>
-                  </div>
-                </Button>
-                <Button variant="outline" className="h-auto py-4">
-                  <div className="text-center">
-                    <div className="font-bold text-accent">F8</div>
-                    <div className="text-sm">Sales</div>
-                  </div>
-                </Button>
-                <Button variant="outline" className="h-auto py-4">
-                  <div className="text-center">
-                    <div className="font-bold text-accent">F9</div>
-                    <div className="text-sm">Purchase</div>
-                  </div>
-                </Button>
-                <Button variant="outline" className="h-auto py-4">
-                  <div className="text-center">
-                    <div className="font-bold text-accent">F10</div>
-                    <div className="text-sm">Credit Note</div>
-                  </div>
-                </Button>
-                <Button variant="outline" className="h-auto py-4">
-                  <div className="text-center">
-                    <div className="font-bold text-accent">F11</div>
-                    <div className="text-sm">Debit Note</div>
-                  </div>
-                </Button>
-              </div>
-            </Card>
 
-            {/* Settings */}
-            <Card className="p-6">
-              <h3 className="font-bold text-lg mb-4 text-primary border-b border-border pb-2">
-                Company
-              </h3>
-              <div className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
-                  <Settings className="h-4 w-4" />
-                  <div className="text-left flex-1">
-                    <div className="font-medium">Company Settings</div>
-                    <div className="text-xs text-muted-foreground">Details & Configuration</div>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3 px-4 text-left"
+                  onClick={() => alert("Trial Balance coming soon")}
+                >
+                  <div className="flex items-center gap-3">
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Alt+T</kbd>
+                    <div>
+                      <div className="font-semibold">Trial Balance</div>
+                      <div className="text-xs text-muted-foreground">Balance verification</div>
+                    </div>
                   </div>
                 </Button>
-                <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
-                  <Building2 className="h-4 w-4" />
-                  <div className="text-left flex-1">
-                    <div className="font-medium">Financial Year</div>
-                    <div className="text-xs text-muted-foreground">Year Management</div>
-                  </div>
-                </Button>
+
+                {isHQ && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start h-auto py-3 px-4 text-left border-amber-200 bg-amber-50 hover:bg-amber-100"
+                    onClick={() => router.push("/reports/consolidated")}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Crown className="h-4 w-4 text-amber-600" />
+                      <kbd className="px-2 py-1 bg-amber-200 rounded text-xs font-mono">Alt+R</kbd>
+                      <div>
+                        <div className="font-semibold text-amber-900">HQ Consolidated</div>
+                        <div className="text-xs text-amber-700">All churches report</div>
+                      </div>
+                    </div>
+                  </Button>
+                )}
               </div>
             </Card>
           </div>
+
+          {/* Company Info Footer */}
+          <Card className="mt-6 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Logged in to</p>
+                <div className="flex items-center gap-2 mt-1">
+                  {isHQ && <Crown className="h-5 w-5 text-amber-500" />}
+                  <p className="font-bold text-lg">{selectedCompany.name}</p>
+                  {selectedCompany.church_code && (
+                    <span className="text-sm text-muted-foreground font-mono">
+                      ({selectedCompany.church_code})
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Quick Actions</p>
+                <div className="flex gap-2 mt-1">
+                  <Button size="sm" variant="outline">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleChangeCompany}>
+                    <Building2 className="h-4 w-4 mr-2" />
+                    Switch Church
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     </div>
