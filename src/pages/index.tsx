@@ -14,7 +14,7 @@ export default function HomePage() {
 
   async function checkAuth() {
     try {
-      const session = await authService.getSession();
+      const session = await authService.getCurrentSession();
       if (session) {
         setIsAuthenticated(true);
       } else {

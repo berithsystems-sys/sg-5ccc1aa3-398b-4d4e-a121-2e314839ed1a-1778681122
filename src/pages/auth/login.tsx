@@ -21,7 +21,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await authService.signInWithEmail(email, password);
+      const { error: signInError } = await authService.signIn(email, password);
+      if (signInError) throw new Error(signInError.message);
       router.push("/");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");

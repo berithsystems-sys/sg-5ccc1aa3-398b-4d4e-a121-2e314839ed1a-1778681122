@@ -33,7 +33,8 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await authService.signUpWithEmail(email, password);
+      const { error: signUpError } = await authService.signUp(email, password);
+      if (signUpError) throw new Error(signUpError.message);
       router.push("/");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
