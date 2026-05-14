@@ -375,7 +375,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_user_hq: { Args: never; Returns: boolean }
     }
     Enums: {
       user_role: "Admin" | "Accountant" | "Data Entry" | "Viewer"
